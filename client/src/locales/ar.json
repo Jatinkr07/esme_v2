@@ -1,0 +1,42 @@
+{
+  "navbar": {
+    "shop": "المتجر",
+    "needs": "الاحتياجات",
+    "effectiveness": "الفعالية",
+    "innovations": "الابتكارات",
+    "story": "القصة",
+    "searchPlaceholder": "بحث...",
+    "products": "المنتجات",
+    "blogs": "المدونات",
+    "noProductsFound": "لم يتم العثور على منتجات!",
+    "noBlogsFound": "لم يتم العثور على مدونات!",
+    "myAccount": "حسابي",
+    "logout": "تسجيل الخروج",
+    "dropdownsData": {
+      "needs": [
+        { "name": "العناية بالبشرة", "path": "/skincare" },
+        { "name": "العناية بالشعر", "path": "/haircare" },
+        { "name": "العناية بالجسم", "path": "/bodycare" }
+      ],
+      "effectiveness": [
+        { "name": "الدراسات السريرية", "path": "/clinical-studies" },
+        { "name": "البحث", "path": "/research" },
+        { "name": "النتائج", "path": "/results" }
+      ],
+      "innovations": [
+        { "name": "التكنولوجيا", "path": "/technology" },
+        { "name": "التركيبات", "path": "/formulations" },
+        { "name": "براءات الاختراع", "path": "/patents" }
+      ],
+      "story": [
+        { "name": "من نحن", "path": "/about" },
+        { "name": "مهمتنا", "path": "/mission" },
+        { "name": "الفريق", "path": "/team" }
+      ],
+      "profile": [
+        { "name": "تسجيل الدخول", "path": "/login" },
+        { "name": "التسجيل", "path": "/register" }
+      ]
+    }
+  }
+}

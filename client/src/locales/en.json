@@ -1,0 +1,42 @@
+{
+  "navbar": {
+    "shop": "Shop",
+    "needs": "Needs",
+    "effectiveness": "Effectiveness",
+    "innovations": "Innovations",
+    "story": "Story",
+    "searchPlaceholder": "Search...",
+    "products": "Products",
+    "blogs": "Blogs",
+    "noProductsFound": "No products found!",
+    "noBlogsFound": "No blogs found!",
+    "myAccount": "My Account",
+    "logout": "Log out",
+    "dropdownsData": {
+      "needs": [
+        { "name": "Skin Care", "path": "/skincare" },
+        { "name": "Hair Care", "path": "/haircare" },
+        { "name": "Body Care", "path": "/bodycare" }
+      ],
+      "effectiveness": [
+        { "name": "Clinical Studies", "path": "/clinical-studies" },
+        { "name": "Research", "path": "/research" },
+        { "name": "Results", "path": "/results" }
+      ],
+      "innovations": [
+        { "name": "Technology", "path": "/technology" },
+        { "name": "Formulations", "path": "/formulations" },
+        { "name": "Patents", "path": "/patents" }
+      ],
+      "story": [
+        { "name": "About Us", "path": "/about" },
+        { "name": "Our Mission", "path": "/mission" },
+        { "name": "Team", "path": "/team" }
+      ],
+      "profile": [
+        { "name": "Sign In", "path": "/login" },
+        { "name": "Register", "path": "/register" }
+      ]
+    }
+  }
+}
