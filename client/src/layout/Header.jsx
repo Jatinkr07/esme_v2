@@ -10,7 +10,7 @@ import {
 } from "react-icons/fi";
 import { useTranslation } from "../utils/i18n";
 import { useCart } from "../context/CartContext";
-import { Link } from "react-router-dom"; // Import Link
+import { Link } from "react-router-dom";
 
 const Header = () => {
   const [currentLang, setCurrentLang] = useState("en");
@@ -115,7 +115,7 @@ const Header = () => {
     : { products: [], blogs: [] };
 
   const DropdownContent = ({ items, onItemClick }) => (
-    <div className="absolute top-full left-0 mt-2 bg-white shadow-lg rounded-lg p-4 min-w-[200px] z-50 border border-gray-200">
+    <div className="absolute top-full left-0  bg-white  p-4 min-w-[200px] z-50 ">
       {items.map((item, index) => (
         <div
           key={index}
@@ -256,7 +256,7 @@ const Header = () => {
             ))}
           </nav>
 
-          <div className="items-center hidden space-x-4 lg:flex">
+          <div className="items-center hidden space-x-1 lg:flex">
             <div className="relative" ref={langDropdownRef}>
               <button
                 className="flex items-center text-gray-700 transition-colors hover:text-blue-600"
@@ -308,7 +308,8 @@ const Header = () => {
             </div>
 
             <button className="p-2 text-gray-700 transition-colors hover:text-blue-600">
-              <FiTruck size={20} />
+              <img src="/navIcon.svg" className="w-6 h-6" />
+              {/* <FiTruck size={20} /> */}
             </button>
 
             <div className="relative" ref={profileDropdownRef}>
@@ -317,11 +318,13 @@ const Header = () => {
                 onMouseEnter={() => setShowProfileDropdown(true)}
                 onMouseLeave={() => setShowProfileDropdown(false)}
               >
-                <FiUser size={20} />
+                <img src="/navIcon2.svg" className="w-6 h-6" />
+
+                {/* <FiUser size={20} /> */}
               </button>
               {showProfileDropdown && (
                 <div
-                  className="absolute top-full right-0 mt-2 bg-white shadow-lg rounded-lg border border-gray-200 z-50 min-w-[200px]"
+                  className="absolute top-0 right-0 mt-8 bg-white  rounded-lg  z-50 min-w-[200px]"
                   onMouseEnter={() => setShowProfileDropdown(true)}
                   onMouseLeave={() => setShowProfileDropdown(false)}
                 >
