@@ -87,19 +87,24 @@ const Header = () => {
 
   const profileMenuItems = isAuthenticated
     ? [
-        { key: "account", label: t("navbar.myAccount") },
-        { key: "logout", label: t("navbar.logout") },
+        { key: "account", label: t("navbar.myAccount"), path: "/account" },
+        { key: "logout", label: t("navbar.logout"), path: "/logout" },
       ]
     : t("navbar.dropdownsData.profile");
 
   const searchResults = {
     products: [
-      { id: 1, name: "Esmé BEAUTY THROUGH IMMUNITY", size: "14 vials x 15 ml" },
-      { id: 2, name: "Vitamin C Serum", size: "30ml" },
+      {
+        id: 1,
+        name: "Esmé BEAUTY THROUGH IMMUNITY",
+        size: "14 vials x 15 ml",
+        path: "/product/1",
+      },
+      { id: 2, name: "Vitamin C Serum", size: "30ml", path: "/product/2" },
     ],
     blogs: [
-      { id: 1, title: "Beauty Tips for Healthy Skin" },
-      { id: 2, title: "The Science Behind Immunity" },
+      { id: 1, title: "Beauty Tips for Healthy Skin", path: "/blog/1" },
+      { id: 2, title: "The Science Behind Immunity", path: "/blog/2" },
     ],
   };
 
@@ -114,16 +119,16 @@ const Header = () => {
       }
     : { products: [], blogs: [] };
 
-  const DropdownContent = ({ items, onItemClick }) => (
-    <div className="absolute top-full left-0  bg-white  p-4 min-w-[200px] z-50 ">
+  const DropdownContent = ({ items }) => (
+    <div className="absolute top-full left-0 bg-white p-4 min-w-[200px] z-50">
       {items.map((item, index) => (
-        <div
+        <Link
           key={index}
-          className="px-3 py-2 text-gray-700 transition-colors rounded-md font-[500] font-narin cursor-pointer hover:text-purple-400"
-          onClick={() => onItemClick?.(item.path)}
+          to={item.path}
+          className="block px-3 py-2 text-gray-700 transition-colors rounded-md font-[500] font-narin cursor-pointer hover:text-purple-400"
         >
           {item.name}
-        </div>
+        </Link>
       ))}
     </div>
   );
@@ -136,6 +141,7 @@ const Header = () => {
           type="text"
           placeholder={t("navbar.searchPlaceholder")}
           value={searchValue}
+          reuse
           onChange={(e) => setSearchValue(e.target.value)}
           className="w-full py-2 pl-10 pr-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
@@ -149,13 +155,14 @@ const Header = () => {
             </h5>
             {filteredResults.products.length > 0 ? (
               filteredResults.products.map((item) => (
-                <div
+                <Link
                   key={item.id}
-                  className="py-1 cursor-pointer hover:text-blue-600"
+                  to={item.path}
+                  className="block py-1 cursor-pointer hover:text-blue-600"
                 >
                   <div className="text-sm">{item.name}</div>
                   <div className="text-xs text-gray-500">{item.size}</div>
-                </div>
+                </Link>
               ))
             ) : (
               <p className="text-xs text-gray-400">
@@ -169,12 +176,13 @@ const Header = () => {
             </h5>
             {filteredResults.blogs.length > 0 ? (
               filteredResults.blogs.map((item) => (
-                <div
+                <Link
                   key={item.id}
-                  className="py-1 text-sm cursor-pointer hover:text-blue-600"
+                  to={item.path}
+                  className="block py-1 text-sm cursor-pointer hover:text-blue-600"
                 >
                   {item.title}
-                </div>
+                </Link>
               ))
             ) : (
               <p className="text-xs text-gray-400">
@@ -189,22 +197,34 @@ const Header = () => {
 
   const MobileNavItem = ({ item, isActive, onClick }) => (
     <div className="border-b border-blue-400">
-      <div
-        className="flex items-center justify-between p-4 cursor-pointer"
-        onClick={onClick}
-      >
-        <span className="font-semibold text-white">{item.label}</span>
-        {item.children && <FiChevronDown className="text-white" />}
-      </div>
+      {item.path ? (
+        <Link
+          to={item.path}
+          className="flex items-center justify-between p-4 cursor-pointer"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <span className="font-semibold text-white">{item.label}</span>
+        </Link>
+      ) : (
+        <div
+          className="flex items-center justify-between p-4 cursor-pointer"
+          onClick={onClick}
+        >
+          <span className="font-semibold text-white">{item.label}</span>
+          {item.children && <FiChevronDown className="text-white" />}
+        </div>
+      )}
       {item.children && isActive && (
         <div className="px-6 pb-4 bg-blue-700">
           {item.children.map((child, index) => (
-            <div
+            <Link
               key={index}
-              className="py-2 text-blue-100 cursor-pointer hover:text-white"
+              to={child.path}
+              className="block py-2 text-blue-100 cursor-pointer hover:text-white"
+              onClick={() => setMobileMenuOpen(false)}
             >
               {child.name}
-            </div>
+            </Link>
           ))}
         </div>
       )}
@@ -217,7 +237,6 @@ const Header = () => {
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center">
             <Link to="/">
-              {" "}
               <img src="/logo.png" alt="Brand Logo" className="w-auto h-14" />
             </Link>
           </div>
@@ -240,17 +259,13 @@ const Header = () => {
                       <DropdownContent items={item.children} />
                     )}
                   </>
-                ) : item.key === "shop" ? (
+                ) : (
                   <Link
                     to={item.path}
                     className="text-lg font-semibold text-gray-800 transition-colors hover:text-purple-300"
                   >
                     {item.label}
                   </Link>
-                ) : (
-                  <button className="text-lg font-semibold text-gray-800 transition-colors hover:text-purple-300">
-                    {item.label}
-                  </button>
                 )}
               </div>
             ))}
@@ -309,7 +324,6 @@ const Header = () => {
 
             <button className="p-2 text-gray-700 transition-colors hover:text-blue-600">
               <img src="/navIcon.svg" className="w-6 h-6" />
-              {/* <FiTruck size={20} /> */}
             </button>
 
             <div className="relative" ref={profileDropdownRef}>
@@ -319,12 +333,10 @@ const Header = () => {
                 onMouseLeave={() => setShowProfileDropdown(false)}
               >
                 <img src="/navIcon2.svg" className="w-6 h-6" />
-
-                {/* <FiUser size={20} /> */}
               </button>
               {showProfileDropdown && (
                 <div
-                  className="absolute top-0 right-0 mt-8 bg-white  rounded-lg  z-50 min-w-[200px]"
+                  className="absolute top-0 right-0 mt-8 bg-white rounded-lg z-50 min-w-[200px]"
                   onMouseEnter={() => setShowProfileDropdown(true)}
                   onMouseLeave={() => setShowProfileDropdown(false)}
                 >
@@ -356,7 +368,7 @@ const Header = () => {
               >
                 <FiShoppingCart size={20} />
                 {cartQuantity > 0 && (
-                  <span className="absolute flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full -top-1 -right-1">
+                  <span className="absolute flex items-center justify-center w-5 h-5 text-xs text-white rounded-full bgred-500 -top-1 -right-1">
                     {cartQuantity}
                   </span>
                 )}
@@ -376,7 +388,7 @@ const Header = () => {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
-            className="fixed inset-0 bg-black bg-opacity-50"
+            className="fixed inset-0 bg-black bg-opacity-50 nominative"
             onClick={() => setMobileMenuOpen(false)}
           />
           <div
