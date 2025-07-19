@@ -18,7 +18,7 @@ import {
 import { useAdmin } from "../../context/AdminContext";
 import Sidebar from "../Sidebar/Sidebar";
 import Categories from "../../pages/Categories/Categories";
-// import ProductsPage from "../../pages/Products/ProductsPage";
+import SectionPage from "../../pages/Products/SectionPage";
 
 const Dashboard = () => {
   const { isAuthenticated, logout } = useAdmin();
@@ -290,7 +290,7 @@ const Dashboard = () => {
               }
             />
             <Route path="categories" element={<Categories />} />
-            {/* <Route path="products" element={<ProductsPage />} /> */}
+            <Route path="products" element={<SectionPage />} />
 
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
