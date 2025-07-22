@@ -50,7 +50,7 @@ const Sidebar = ({ isOpen, setIsOpen, onMenuClick }) => {
       key: "6",
       icon: <UserOutlined />,
       label: "Users",
-      path: "/admin/users",
+      path: "/admin/user",
     },
     {
       key: "7",
@@ -133,7 +133,7 @@ const Sidebar = ({ isOpen, setIsOpen, onMenuClick }) => {
         `}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
+     
           <div className="flex items-center justify-between p-4 border-b border-black lg:justify-center">
             <motion.h2
               className="text-xl font-bold lg:text-2xl"

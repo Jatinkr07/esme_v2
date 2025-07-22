@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { message, Button } from "antd";
 import {
   LogoutOutlined,
@@ -8,7 +8,6 @@ import {
 } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import {
-  Outlet,
   Routes,
   Route,
   Navigate,
@@ -19,9 +18,17 @@ import { useAdmin } from "../../context/AdminContext";
 import Sidebar from "../Sidebar/Sidebar";
 import Categories from "../../pages/Categories/Categories";
 import SectionPage from "../../pages/Products/SectionPage";
+import InventoryTable from "../../pages/Inventory/InventoryTable";
+import BlogsPage from "../../pages/Blogs/BlogsPage";
+import UserTable from "../../pages/Users/UserTable";
+import CouponManager from "../../pages/CouponManager/CouponManager";
+import GiftCardManagement from "../../pages/Gift-Card/GiftCardManagement";
+import OrderManagement from "../../pages/Orders/OrderManagement";
+import PaymentsTable from "../../pages/Payments/PaymentTable";
+import DashboardContent from "./DashboardContent";
 
 const Dashboard = () => {
-  const { isAuthenticated, logout } = useAdmin();
+  const { isAuthenticated, logout, isLoading } = useAdmin();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
@@ -47,11 +54,7 @@ const Dashboard = () => {
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 1024);
-      if (window.innerWidth >= 1024) {
-        setIsSidebarOpen(true);
-      } else {
-        setIsSidebarOpen(false);
-      }
+      setIsSidebarOpen(window.innerWidth >= 1024);
     };
 
     checkScreenSize();
@@ -59,22 +62,28 @@ const Dashboard = () => {
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  if (!isAuthenticated) {
-    window.location.href = "/admin/login";
-    return null;
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  const handleLogout = () => {
-    logout();
-    message.success("Logged out successfully!");
-    window.location.href = "/admin/login";
+  if (!isAuthenticated) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      message.success("Logged out successfully!");
+      navigate("/admin/login");
+    } catch (error) {
+      message.error("Logout failed!");
+    }
   };
 
   const handleMenuClick = (item) => {
     if (item.key === "13") {
       handleLogout();
     }
-    console.log("Menu clicked:", item);
   };
 
   const handleBack = () => {
@@ -98,12 +107,11 @@ const Dashboard = () => {
         onMenuClick={handleMenuClick}
       />
 
-      {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Header */}
         <motion.header
           initial={{ y: -20 }}
           animate={{ y: 0 }}
+          transition={{ duration: 0.3 }}
           className="px-4 py-3 bg-white border-b border-gray-200 shadow-sm lg:px-6 lg:py-4"
         >
           <div className="flex items-center justify-between">
@@ -145,156 +153,20 @@ const Dashboard = () => {
           </div>
         </motion.header>
 
-        {/* Main Content Area */}
         <main className="flex-1 p-4 overflow-y-auto lg:p-6">
           <Routes>
-            <Route
-              index
-              element={
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                >
-                  <div className="p-6 transition-shadow bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 lg:text-base">
-                          Total Sales
-                        </h3>
-                        <p className="text-2xl font-bold text-green-600 lg:text-3xl">
-                          1,256.00 AED
-                        </p>
-                      </div>
-                      <div className="p-3 bg-green-100 rounded-full">
-                        <svg
-                          className="w-6 h-6 text-green-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="mt-3 text-sm text-gray-600">
-                      <span className="font-medium text-green-600">+12.5%</span>{" "}
-                      from last month
-                    </div>
-                  </div>
-
-                  <div className="p-6 transition-shadow bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 lg:text-base">
-                          Orders
-                        </h3>
-                        <p className="text-2xl font-bold text-blue-600 lg:text-3xl">
-                          24
-                        </p>
-                      </div>
-                      <div className="p-3 bg-blue-100 rounded-full">
-                        <svg
-                          className="w-6 h-6 text-blue-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="mt-3 text-sm text-gray-600">
-                      <span className="font-medium text-blue-600">+8.2%</span>{" "}
-                      from last month
-                    </div>
-                  </div>
-
-                  <div className="p-6 transition-shadow bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 lg:text-base">
-                          Customers
-                        </h3>
-                        <p className="text-2xl font-bold text-purple-600 lg:text-3xl">
-                          142
-                        </p>
-                      </div>
-                      <div className="p-3 bg-purple-100 rounded-full">
-                        <svg
-                          className="w-6 h-6 text-purple-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="mt-3 text-sm text-gray-600">
-                      <span className="font-medium text-purple-600">
-                        +15.3%
-                      </span>{" "}
-                      from last month
-                    </div>
-                  </div>
-
-                  <div className="p-6 transition-shadow bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md sm:col-span-2 lg:col-span-1">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 lg:text-base">
-                          Products
-                        </h3>
-                        <p className="text-2xl font-bold text-orange-600 lg:text-3xl">
-                          89
-                        </p>
-                      </div>
-                      <div className="p-3 bg-orange-100 rounded-full">
-                        <svg
-                          className="w-6 h-6 text-orange-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className="mt-3 text-sm text-gray-600">
-                      <span className="font-medium text-orange-600">+5.1%</span>{" "}
-                      from last month
-                    </div>
-                  </div>
-                </motion.div>
-              }
-            />
+            <Route index element={<DashboardContent />} />
             <Route path="categories" element={<Categories />} />
             <Route path="products" element={<SectionPage />} />
-
+            <Route path="inventory" element={<InventoryTable />} />
+            <Route path="blogs" element={<BlogsPage />} />
+            <Route path="users" element={<UserTable />} />
+            <Route path="coupons" element={<CouponManager />} />
+            <Route path="gift-cards" element={<GiftCardManagement />} />
+            <Route path="orders" element={<OrderManagement />} />
+            <Route path="payments" element={<PaymentsTable />} />
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
-          <Outlet />
         </main>
       </div>
     </motion.div>

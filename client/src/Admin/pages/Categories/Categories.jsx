@@ -1,223 +1,259 @@
-import { useMemo, useState } from "react";
-import { Table, Button, Modal, Input, message, Select } from "antd";
-import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import React, { useState } from "react";
+import { Table, Select, Input, Checkbox, Button, Modal } from "antd";
+import {
+  LeftOutlined,
+  RightOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  CloseOutlined,
+} from "@ant-design/icons";
 
-const initialCategories = [
-  { id: 1, name: "Skin Beauty" },
-  { id: 2, name: "Wellness" },
-  { id: 3, name: "Nutrition" },
-];
+const { Option } = Select;
 
-const Categories = () => {
-  const [categories, setCategories] = useState(initialCategories);
-  const [modal, setModal] = useState({ visible: false, category: null });
-  const [input, setInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState(null);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-
-  // For dropdown options
-  const categoryOptions = useMemo(
-    () => categories.map((c) => ({ label: c.name, value: c.name })),
-    [categories]
-  );
-
-  // Filtered & searched categories, recomputed only as needed
-  const filteredCategories = useMemo(() => {
-    let data = categories;
-    if (filter) data = data.filter((c) => c.name === filter);
-    if (search.trim())
-      data = data.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase())
-      );
-    return data;
-  }, [categories, filter, search]);
+export default function CategoryManagement() {
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const columns = [
     {
-      title: (
-        <input
-          type="checkbox"
-          checked={
-            selectedRowKeys.length === filteredCategories.length &&
-            filteredCategories.length
-          }
-          indeterminate={
-            selectedRowKeys.length &&
-            selectedRowKeys.length < filteredCategories.length
-          }
-          onChange={(e) => {
-            if (e.target.checked)
-              setSelectedRowKeys(filteredCategories.map((row) => row.id));
-            else setSelectedRowKeys([]);
-          }}
-        />
-      ),
-      dataIndex: "select",
-      key: "select",
-      render: (_, record) => (
-        <input
-          type="checkbox"
-          checked={selectedRowKeys.includes(record.id)}
-          onChange={(e) => {
-            if (e.target.checked)
-              setSelectedRowKeys((keys) => [...keys, record.id]);
-            else
-              setSelectedRowKeys((keys) =>
-                keys.filter((id) => id !== record.id)
-              );
-          }}
-        />
-      ),
-      width: 40,
+      title: "#",
+      dataIndex: "checkbox",
+      key: "checkbox",
+      width: 80,
+      render: () => <Checkbox />,
       align: "center",
     },
     {
       title: "S. No.",
-      dataIndex: "id",
+      dataIndex: "sno",
       key: "sno",
-      render: (_, __, idx) => idx + 1,
-      width: 60,
+      width: 150,
       align: "center",
     },
     {
       title: "Category",
-      dataIndex: "name",
-      key: "name",
-      width: 180,
+      dataIndex: "category",
+      key: "category",
+      width: 300,
       align: "center",
     },
     {
       title: "Actions",
+      dataIndex: "actions",
       key: "actions",
-      width: 90,
+      width: 150,
       align: "center",
-      render: (_, record) => (
-        <>
-          <Button
-            icon={<EditOutlined />}
-            size="small"
-            style={{ marginRight: 8 }}
-            onClick={() => {
-              setModal({ visible: true, category: record });
-              setInput(record.name);
-            }}
-          />
-          <Button
-            icon={<DeleteOutlined />}
-            size="small"
-            danger
-            onClick={() => handleDelete(record.id)}
-          />
-        </>
+      render: () => (
+        <div className="flex items-center justify-center gap-3">
+          <EditOutlined className="text-base text-gray-600 cursor-pointer hover:text-blue-600" />
+          <DeleteOutlined className="text-base text-red-400 cursor-pointer hover:text-red-600" />
+        </div>
       ),
     },
   ];
 
-  const handleDelete = (id) =>
-    Modal.confirm({
-      title: "Are you sure you want to delete this category?",
-      onOk: () => {
-        setCategories((cats) => cats.filter((cat) => cat.id !== id));
-        setSelectedRowKeys((keys) => keys.filter((key) => key !== id));
-        message.success("Category deleted successfully!");
-      },
-    });
+  const data = [
+    {
+      key: "1",
+      sno: "1.",
+      category: "Skin Beauty",
+    },
+    {
+      key: "2",
+      sno: "2.",
+      category: "Wellness",
+    },
+    {
+      key: "3",
+      sno: "3.",
+      category: "Nutrition",
+    },
+  ];
 
-  const handleModalOk = () => {
-    const name = input.trim();
-    if (!name) return message.error("Category name cannot be empty!");
-    setCategories((cats) => {
-      if (modal.category) {
-        return cats.map((cat) =>
-          cat.id === modal.category.id ? { ...cat, name } : cat
-        );
-      } else {
-        const newId = cats.length ? Math.max(...cats.map((c) => c.id)) + 1 : 1;
-        return [...cats, { id: newId, name }];
-      }
-    });
-    message.success(
-      modal.category
-        ? "Category updated successfully!"
-        : "Category added successfully!"
-    );
-    setModal({ visible: false, category: null });
-    setInput("");
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleOk = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
   };
 
   return (
-    <div style={{ margin: "0 auto", padding: 16 }}>
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 12,
-          marginBottom: 16,
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div className="space-x-6">
-          <Select
-            placeholder="Filter Category"
-            allowClear
-            style={{ width: 180 }}
-            options={categoryOptions}
-            value={filter}
-            onChange={setFilter}
-          />
-          <Input.Search
-            allowClear
-            placeholder="Search category"
-            style={{ width: 220 }}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+    <div className="min-h-screen bg-gray-50">
+      <div className="mx-4 my-4 bg-white rounded-lg shadow-sm">
+        {/* Controls */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Show</span>
+                <Select
+                  defaultValue="10"
+                  size="small"
+                  style={{ width: 60 }}
+                  className="text-sm"
+                >
+                  <Option value="10">10</Option>
+                  <Option value="25">25</Option>
+                  <Option value="50">50</Option>
+                  <Option value="100">100</Option>
+                </Select>
+              </div>
+              <Input
+                placeholder="Search in Table"
+                size="middle"
+                className="w-64"
+                style={{
+                  backgroundColor: "#f8f9fa",
+                  border: "1px solid #e9ecef",
+                }}
+              />
+            </div>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={showModal}
+              className="h-auto px-4 py-2 bg-purple-400 border-purple-400 rounded-md hover:bg-purple-500 hover:border-purple-500"
+            >
+              Add New
+            </Button>
+          </div>
         </div>
-        <Button
-          icon={<PlusOutlined />}
-          type="primary"
-          style={{ minWidth: 120 }}
-          onClick={() => {
-            setModal({ visible: true, category: null });
-            setInput("");
-          }}
-        >
-          Add Category
-        </Button>
-      </div>
-      <Table
-        dataSource={filteredCategories}
-        columns={columns}
-        rowKey="id"
-        pagination={{ pageSize: 5, showSizeChanger: false }}
-        scroll={{ x: true }}
-        size="middle"
-        bordered
-        rowClassName="category-row"
-      />
-      <Modal
-        open={modal.visible}
-        onOk={handleModalOk}
-        onCancel={() => {
-          setModal({ visible: false, category: null });
-          setInput("");
-        }}
-        title={modal.category ? "Edit Category" : "Add Category"}
-        okText="Save"
-        cancelText="Cancel"
-      >
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Category name"
-          maxLength={100}
-          autoFocus
+
+        {/* Table */}
+        <Table
+          columns={columns}
+          dataSource={data}
+          pagination={false}
+          className="category-table"
+          rowClassName="hover:bg-gray-50"
+          size="middle"
+          bordered
         />
+
+        {/* Footer Pagination */}
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-end gap-2">
+            <LeftOutlined className="text-gray-400 cursor-pointer hover:text-gray-600" />
+            <span className="mx-3 text-sm text-gray-600">Page 1 of 1</span>
+            <RightOutlined className="text-gray-400 cursor-pointer hover:text-gray-600" />
+          </div>
+        </div>
+      </div>
+
+      {/* Add Category Modal */}
+      <Modal
+        open={isModalVisible}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        footer={null}
+        closeIcon={
+          <CloseOutlined className="text-gray-400 hover:text-gray-600" />
+        }
+        className="add-category-modal"
+        width={600}
+        centered
+      >
+        <div className="p-6">
+          <h2 className="mb-6 text-xl font-medium text-gray-700">
+            Add Category
+          </h2>
+
+          <div className="space-y-6">
+            <div>
+              <label className="block mb-2 text-sm text-gray-500">
+                Category in english
+              </label>
+              <Input
+                size="large"
+                className="w-full"
+                style={{
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "4px",
+                }}
+              />
+            </div>
+
+            <div>
+              <label className="block mb-2 text-sm text-right text-gray-500">
+                Category in arabic
+              </label>
+              <Input
+                size="large"
+                className="w-full"
+                style={{
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "4px",
+                  direction: "rtl",
+                  textAlign: "right",
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end mt-8">
+            <Button
+              type="primary"
+              onClick={handleOk}
+              className="h-auto px-6 py-2 bg-blue-400 border-blue-400 rounded-md hover:bg-blue-500 hover:border-blue-500"
+            >
+              Save
+            </Button>
+          </div>
+        </div>
       </Modal>
+
+      <style jsx>{`
+        :global(.category-table .ant-table-thead > tr > th) {
+          background-color: #f1f3f4 !important;
+          color: #5f6368 !important;
+          font-weight: 500 !important;
+          border-bottom: 1px solid #e8eaed !important;
+          padding: 16px 12px !important;
+        }
+
+        :global(.category-table .ant-table-tbody > tr > td) {
+          padding: 16px 12px !important;
+          border-bottom: 1px solid #f0f0f0 !important;
+          color: #333 !important;
+        }
+
+        :global(.category-table .ant-table-tbody > tr:hover > td) {
+          background-color: #fafafa !important;
+        }
+
+        :global(.category-table .ant-table) {
+          border: none !important;
+        }
+
+        :global(.category-table .ant-table-container) {
+          border: none !important;
+        }
+
+        :global(.add-category-modal .ant-modal-content) {
+          padding: 0 !important;
+          border-radius: 8px !important;
+        }
+
+        :global(.add-category-modal .ant-modal-header) {
+          display: none !important;
+        }
+
+        :global(.add-category-modal .ant-modal-body) {
+          padding: 0 !important;
+        }
+
+        :global(.add-category-modal .ant-modal-close) {
+          top: 20px !important;
+          right: 20px !important;
+        }
+      `}</style>
     </div>
   );
-};
-
-export default Categories;
+}

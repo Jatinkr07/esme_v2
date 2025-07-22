@@ -1,9 +1,10 @@
 /* eslint-disable no-unused-vars */
 import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
 import { message } from "antd";
 import { motion } from "framer-motion";
-import { useAdmin } from "../../context/AdminContext";
 import { useNavigate } from "react-router-dom";
+import { useAdmin } from "../../context/AdminContext";
 
 const AdminLogin = () => {
   const { login } = useAdmin();
@@ -14,15 +15,19 @@ const AdminLogin = () => {
   } = useForm();
   const navigate = useNavigate();
 
-  const onSubmit = (data) => {
-    const { username, password } = data;
-    const success = login(username, password);
-    if (success) {
+  const loginMutation = useMutation({
+    mutationFn: login,
+    onSuccess: () => {
       message.success("Logged in successfully!");
       navigate("/admin");
-    } else {
+    },
+    onError: () => {
       message.error("Invalid credentials!");
-    }
+    },
+  });
+
+  const onSubmit = (data) => {
+    loginMutation.mutate(data);
   };
 
   return (
@@ -73,9 +78,10 @@ const AdminLogin = () => {
           </div>
           <button
             type="submit"
-            className="w-full py-2 text-white transition bg-indigo-600 rounded-md hover:bg-indigo-700"
+            disabled={loginMutation.isLoading}
+            className="w-full py-2 text-white transition bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-indigo-400"
           >
-            Login
+            {loginMutation.isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>
