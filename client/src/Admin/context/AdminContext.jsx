@@ -1,31 +1,27 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import Cookies from "js-cookie";
 import API_URL from "../../utils/api";
 
 const AdminContext = createContext();
 
 export function AdminProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("adminToken")
+  );
   const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
-
-  // useEffect(() => {
-  //   const token = Cookies.get("adminToken");
-  //   if (token) {
-  //     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  //   }
-  // }, []);
 
   const { isLoading } = useQuery({
     queryKey: ["admin"],
     queryFn: async () => {
-      const token = Cookies.get("adminToken");
+      const token = localStorage.getItem("adminToken");
       if (!token) {
         throw new Error("No token found");
       }
-      const response = await axios.get(`${API_URL}/api/admin/me`);
+      const response = await axios.get(`${API_URL}/api/admin/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       return response.data;
     },
     onSuccess: (data) => {
@@ -35,21 +31,17 @@ export function AdminProvider({ children }) {
     onError: () => {
       setIsAuthenticated(false);
       setUser(null);
-      Cookies.remove("adminToken");
+      localStorage.removeItem("adminToken");
       delete axios.defaults.headers.common["Authorization"];
     },
     retry: 0,
-    enabled: !!Cookies.get("adminToken"),
+    enabled: !!localStorage.getItem("adminToken"),
   });
 
   const login = async (data) => {
     const response = await axios.post(`${API_URL}/api/admin/login`, data);
     const token = response.data.token;
-    Cookies.set("adminToken", token, {
-      expires: 7,
-      secure: import.meta.env.NODE_ENV === "production",
-      sameSite: import.meta.env.NODE_ENV === "production" ? "none" : "lax",
-    });
+    localStorage.setItem("adminToken", token);
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     setIsAuthenticated(true);
     setUser(response.data.admin);
@@ -57,15 +49,29 @@ export function AdminProvider({ children }) {
   };
 
   const logout = async () => {
+    const token = localStorage.getItem("adminToken");
+
+    localStorage.removeItem("adminToken");
+    delete axios.defaults.headers.common["Authorization"];
+    setIsAuthenticated(false);
+    setUser(null);
+    queryClient.clear();
+
     try {
-      await axios.post(`${API_URL}/api/admin/logout`);
-      Cookies.remove("adminToken");
-      delete axios.defaults.headers.common["Authorization"];
-      setIsAuthenticated(false);
-      setUser(null);
-      queryClient.clear();
+      if (token) {
+        await axios.post(
+          `${API_URL}/api/admin/logout`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+      }
+      return { message: "Logged out successfully" };
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Logout API call failed:", error.message);
+
+      return { message: "Logged out successfully" };
     }
   };
 

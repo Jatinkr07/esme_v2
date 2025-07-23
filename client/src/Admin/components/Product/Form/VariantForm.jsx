@@ -1,30 +1,50 @@
 import { useState, useEffect } from "react";
-import { Form, Input, Button, Switch, Select, Upload, message } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import {
+  Form,
+  Input,
+  Button,
+  Switch,
+  Select,
+  Upload,
+  message,
+  Image,
+} from "antd";
+import { UploadOutlined, DeleteOutlined } from "@ant-design/icons";
 import TipTapComponent from "../Editor/TipTapComponent";
+import API_URL from "../../../../utils/api";
 
 const { Option } = Select;
 
 const VariantForm = ({ initialData, onSave, onCancel }) => {
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState([]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
   const [editorData, setEditorData] = useState({
-    titleEnglish: "",
-    titleArabic: "",
+    title: { en: "", ar: "" },
   });
 
   useEffect(() => {
     if (initialData) {
       form.setFieldsValue({
-        ...initialData,
-        status: initialData.status || false,
-        images: initialData.images || [],
+        skuId: initialData.skuId,
+        weight: initialData.weight,
+        price: initialData.price,
+        priceArabic: initialData.priceArabic,
+        currency: initialData.currency || "AED",
+        status: initialData.status !== undefined ? initialData.status : true,
+        size: initialData.size || "Pack of 1",
       });
       setEditorData({
-        titleEnglish: initialData.titleEnglish || "",
-        titleArabic: initialData.titleArabic || "",
+        title: initialData.title || { en: "", ar: "" },
       });
-      setFileList(initialData.images || []);
+      setFileList(
+        initialData.images?.map((url, index) => ({
+          uid: `-${index}`,
+          name: url.split("/").pop(),
+          status: "done",
+          url: `${API_URL}${url}`,
+        })) || []
+      );
     } else {
       form.setFieldsValue({
         status: true,
@@ -36,25 +56,67 @@ const VariantForm = ({ initialData, onSave, onCancel }) => {
 
   const handleSubmit = async () => {
     try {
+      // Validate Ant Design form fields
       const values = await form.validateFields();
 
-      const formData = {
-        ...values,
-        ...editorData,
-        images: fileList.map((file) => file.response || file.name || file.url), // Handle file upload response or file name
-      };
+      // Validate editor fields
+      if (!editorData.title.en.trim()) {
+        message.error("Please fill in the English title");
+        return;
+      }
+      if (!editorData.title.ar.trim()) {
+        message.error("Please fill in the Arabic title");
+        return;
+      }
+
+      // Validate images (required for new variants, optional for updates if images exist)
+      if (!initialData && fileList.length === 0) {
+        message.error("Please upload at least one image for a new variant");
+        return;
+      }
+      if (
+        initialData &&
+        fileList.length === 0 &&
+        imagesToDelete.length === initialData.images.length
+      ) {
+        message.error("At least one image must remain for the variant");
+        return;
+      }
+
+      // Construct FormData
+      const formData = new FormData();
+      formData.append("skuId", values.skuId);
+      formData.append("weight", values.weight);
+      formData.append("title", JSON.stringify(editorData.title));
+      formData.append("price", values.price);
+      formData.append("priceArabic", values.priceArabic);
+      formData.append("currency", values.currency);
+      formData.append("status", values.status);
+      formData.append("size", values.size);
+      formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
+      fileList.forEach((file) => {
+        if (file.originFileObj) {
+          formData.append("images", file.originFileObj);
+        }
+      });
+
+      // Debug FormData contents
+      console.log("FormData contents:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+      }
 
       onSave(formData);
     } catch (error) {
-      console.log(error);
+      console.error("Validation error:", error);
       message.error("Please fill in all required fields");
     }
   };
 
-  const handleEditorChange = (field, data) => {
+  const handleEditorChange = (field, lang, data) => {
     setEditorData((prev) => ({
       ...prev,
-      [field]: data,
+      [field]: { ...prev[field], [lang]: data },
     }));
   };
 
@@ -62,21 +124,28 @@ const VariantForm = ({ initialData, onSave, onCancel }) => {
     setFileList(newFileList);
   };
 
+  const handleRemoveImage = (file) => {
+    if (file.url) {
+      setImagesToDelete((prev) => [
+        ...prev,
+        file.url.replace(`${API_URL}`, ""),
+      ]);
+    }
+    setFileList(fileList.filter((f) => f.uid !== file.uid));
+  };
+
   const uploadProps = {
     multiple: true,
     fileList,
     onChange: handleUploadChange,
-    beforeUpload: () => false, // Prevent auto upload, handle manually if needed
-    onRemove: (file) => {
-      const index = fileList.indexOf(file);
-      const newFileList = [...fileList];
-      newFileList.splice(index, 1);
-      setFileList(newFileList);
-    },
+    beforeUpload: () => false, // Prevent auto upload
+    onRemove: handleRemoveImage,
+    listType: "picture",
+    showUploadList: { showPreviewIcon: true, showRemoveIcon: true },
   };
 
   return (
-    <div className="overflow-y-auto max-h-96">
+    <div className="overflow-y-auto max-h-[80vh]">
       <Form form={form} layout="vertical" className="space-y-4">
         <Form.Item
           label="SKU ID"
@@ -100,8 +169,8 @@ const VariantForm = ({ initialData, onSave, onCancel }) => {
           rules={[{ required: true, message: "Please enter title in English" }]}
         >
           <TipTapComponent
-            data={editorData.titleEnglish}
-            onChange={(data) => handleEditorChange("titleEnglish", data)}
+            data={editorData.title.en}
+            onChange={(data) => handleEditorChange("title", "en", data)}
             placeholder="Enter title in English"
             height={150}
           />
@@ -113,11 +182,11 @@ const VariantForm = ({ initialData, onSave, onCancel }) => {
           rules={[{ required: true, message: "Please enter title in Arabic" }]}
         >
           <TipTapComponent
-            data={editorData.titleArabic}
-            onChange={(data) => handleEditorChange("titleArabic", data)}
+            data={editorData.title.ar}
+            onChange={(data) => handleEditorChange("title", "ar", data)}
             placeholder="Enter title in Arabic"
             height={150}
-            dir="rtl" // Support RTL for Arabic
+            dir="rtl"
           />
         </Form.Item>
 
@@ -125,19 +194,42 @@ const VariantForm = ({ initialData, onSave, onCancel }) => {
           label="Images"
           name="images"
           rules={[
-            { required: true, message: "Please upload at least one image" },
+            {
+              validator: () => {
+                if (!initialData && fileList.length === 0) {
+                  return Promise.reject(
+                    "Please upload at least one image for a new variant"
+                  );
+                }
+                if (
+                  initialData &&
+                  fileList.length === 0 &&
+                  imagesToDelete.length === initialData.images.length
+                ) {
+                  return Promise.reject(
+                    "At least one image must remain for the variant"
+                  );
+                }
+                return Promise.resolve();
+              },
+            },
           ]}
-          valuePropName="fileList" // Use fileList as the value
-          getValueFromEvent={(e) => e.fileList} // Sync fileList with form
         >
           <Upload {...uploadProps}>
             <Button icon={<UploadOutlined />}>Choose Files</Button>
           </Upload>
-          <span className="ml-2 text-sm text-gray-500">
-            {fileList.length > 0
-              ? `${fileList.length} file(s) selected`
-              : "No file chosen"}
-          </span>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {fileList.map((file) => (
+              <div key={file.uid} className="flex items-center space-x-2">
+                <Image
+                  src={file.url || URL.createObjectURL(file.originFileObj)}
+                  alt="Preview"
+                  width={50}
+                  height={50}
+                />
+              </div>
+            ))}
+          </div>
         </Form.Item>
 
         <Form.Item

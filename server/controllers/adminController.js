@@ -1,6 +1,5 @@
 import Admin from "../models/Admin.js";
 import jwt from "jsonwebtoken";
-import { cookieOptions } from "../utils/cookieOptions.js";
 
 export const login = async (req, res, next) => {
   try {
@@ -21,8 +20,11 @@ export const login = async (req, res, next) => {
       expiresIn: "7d",
     });
 
-    res.cookie("adminToken", token, cookieOptions);
-    res.json({ message: "Logged in successfully" });
+    res.json({
+      message: "Logged in successfully",
+      token,
+      admin: { id: admin._id, username: admin.username },
+    });
   } catch (error) {
     next(error);
   }
@@ -30,7 +32,7 @@ export const login = async (req, res, next) => {
 
 export const logout = async (req, res, next) => {
   try {
-    res.clearCookie("adminToken", cookieOptions);
+    // Since token is managed client-side, simply return success
     res.json({ message: "Logged out successfully" });
   } catch (error) {
     next(error);

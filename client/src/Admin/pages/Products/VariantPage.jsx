@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Table,
   Button,
@@ -19,64 +19,146 @@ import {
   SearchOutlined,
   ArrowLeftOutlined,
 } from "@ant-design/icons";
+import DOMPurify from "dompurify";
 import VariantForm from "../../components/Product/Form/VariantForm";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import API_URL from "../../../utils/api";
+import { useAdmin } from "../../context/AdminContext";
 
 const { Option } = Select;
 const { Search } = Input;
 
 const VariantPage = ({ productId, onNavigateBack }) => {
-  const [variants, setVariants] = useState([
-    {
-      id: 1,
-      productId: 1,
-      skuId: "ESME-BTI-001",
-      name: "Esmé Collagen Supplement BEAUTY THROUGH IMMUNITY, 14 vials x 15 ml",
-      size: "Pack of 1",
-      status: true,
-    },
-    {
-      id: 2,
-      productId: 1,
-      skuId: "ESME-BTI-002",
-      name: "Esmé Collagen Supplement BEAUTY THROUGH IMMUNITY, 14 vials x 15 ml",
-      size: "Pack of 2",
-      status: true,
-    },
-    {
-      id: 3,
-      productId: 1,
-      skuId: "ESME-BTI-003",
-      name: "Esmé Collagen Supplement BEAUTY THROUGH IMMUNITY, 14 vials x 15 ml",
-      size: "Pack of 3",
-      status: true,
-    },
-  ]);
-
-  const [filteredVariants, setFilteredVariants] = useState([]);
+  const { isAuthenticated } = useAdmin();
+  const queryClient = useQueryClient();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingVariant, setEditingVariant] = useState(null);
   const [pageSize, setPageSize] = useState(10);
   const [searchText, setSearchText] = useState("");
 
-  useEffect(() => {
-    const productVariants = variants.filter(
-      (variant) => variant.productId === productId
-    );
-    setFilteredVariants(productVariants);
-  }, [variants, productId]);
+  // Fetch product with variants
+  const {
+    data: product,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["product", productId],
+    queryFn: async () => {
+      const response = await axios.get(
+        `${API_URL}/api/admin/products/${productId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      );
+      return response.data;
+    },
+    enabled: isAuthenticated && !!productId,
+    onError: (err) => {
+      if (err.response?.status === 404) {
+        message.error("Product not found");
+        onNavigateBack();
+      } else {
+        message.error("Failed to fetch product");
+      }
+    },
+  });
+
+  // Add variant mutation
+  const addVariantMutation = useMutation({
+    mutationFn: (data) =>
+      axios.post(`${API_URL}/api/admin/products/${productId}/variants`, data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        },
+      }),
+    onSuccess: () => {
+      message.success("Variant added successfully");
+      queryClient.invalidateQueries(["product", productId]);
+      setIsModalVisible(false);
+    },
+    onError: (err) => {
+      console.error("Add variant error:", err.response?.data);
+      message.error(err.response?.data?.message || "Failed to add variant");
+    },
+  });
+
+  // Update variant mutation
+  const updateVariantMutation = useMutation({
+    mutationFn: ({ variantId, data }) => {
+      const formData = new FormData();
+      // If data is a FormData object (from VariantForm), use it directly
+      if (data instanceof FormData) {
+        return axios.put(
+          `${API_URL}/api/admin/products/${productId}/variants/${variantId}`,
+          data,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+            },
+          }
+        );
+      }
+      // For status toggle, include all required fields
+      const variant = product.variants.find((v) => v._id === variantId);
+      formData.append("skuId", variant.skuId);
+      formData.append("weight", variant.weight);
+      formData.append("title", JSON.stringify(variant.title));
+      formData.append("price", variant.price);
+      formData.append("priceArabic", variant.priceArabic);
+      formData.append("currency", variant.currency);
+      formData.append("status", data.status);
+      formData.append("size", variant.size);
+      formData.append("imagesToDelete", JSON.stringify([]));
+      console.log("Status toggle FormData:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+      }
+      return axios.put(
+        `${API_URL}/api/admin/products/${productId}/variants/${variantId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      );
+    },
+    onSuccess: () => {
+      message.success("Variant updated successfully");
+      queryClient.invalidateQueries(["product", productId]);
+    },
+    onError: (err) => {
+      console.error("Update variant error:", err.response?.data);
+      message.error(err.response?.data?.message || "Failed to update variant");
+    },
+  });
+
+  // Delete variant mutation
+  const deleteVariantMutation = useMutation({
+    mutationFn: (variantId) =>
+      axios.delete(
+        `${API_URL}/api/admin/products/${productId}/variants/${variantId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        }
+      ),
+    onSuccess: () => {
+      message.success("Variant deleted successfully");
+      queryClient.invalidateQueries(["product", productId]);
+    },
+    onError: () => message.error("Failed to delete variant"),
+  });
 
   const handleSearch = (value) => {
     setSearchText(value);
-    const productVariants = variants.filter(
-      (variant) => variant.productId === productId
-    );
-    const filtered = productVariants.filter(
-      (variant) =>
-        variant.name.toLowerCase().includes(value.toLowerCase()) ||
-        variant.skuId.toLowerCase().includes(value.toLowerCase()) ||
-        variant.size.toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredVariants(filtered);
   };
 
   const handleAdd = () => {
@@ -89,119 +171,32 @@ const VariantPage = ({ productId, onNavigateBack }) => {
     setIsModalVisible(true);
   };
 
-  const handleDelete = (id) => {
-    setVariants(variants.filter((variant) => variant.id !== id));
-    message.success("Variant deleted successfully");
-  };
-
-  const handleStatusChange = (id, status) => {
-    setVariants(
-      variants.map((variant) =>
-        variant.id === id ? { ...variant, status } : variant
-      )
-    );
+  const handleDelete = (variantId) => {
+    deleteVariantMutation.mutate(variantId);
   };
 
   const handleSave = (variantData) => {
     if (editingVariant) {
-      setVariants(
-        variants.map((variant) =>
-          variant.id === editingVariant.id
-            ? { ...variant, ...variantData }
-            : variant
-        )
-      );
-      message.success("Variant updated successfully");
+      updateVariantMutation.mutate({
+        variantId: editingVariant._id,
+        data: variantData,
+      });
     } else {
-      const newVariant = {
-        id: Date.now(),
-        productId: productId,
-        ...variantData,
-      };
-      setVariants([...variants, newVariant]);
-      message.success("Variant added successfully");
+      addVariantMutation.mutate(variantData);
     }
-    setIsModalVisible(false);
   };
 
-  const columns = [
-    {
-      title: "#",
-      key: "checkbox",
-      width: 50,
-      render: () => <Checkbox />,
-    },
-    {
-      title: "S.No.",
-      key: "serialNumber",
-      width: 80,
-      render: (_, __, index) => index + 1,
-    },
-    {
-      title: "Sku_id",
-      dataIndex: "skuId",
-      key: "skuId",
-      width: 150,
-    },
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      ellipsis: true,
-    },
-    {
-      title: "Size",
-      dataIndex: "size",
-      key: "size",
-      width: 150,
-    },
-    {
-      title: "Status",
-      key: "status",
-      width: 100,
-      render: (_, record) => (
-        <Switch
-          checked={record.status}
-          onChange={(checked) => handleStatusChange(record.id, checked)}
-          className="bg-gray-300"
-        />
-      ),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      width: 150,
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
-            icon={<EyeOutlined />}
-            onClick={() => handleEdit(record)}
-            className="p-0"
-          />
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            className="p-0"
-          />
-          <Popconfirm
-            title="Are you sure you want to delete this variant?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button
-              type="link"
-              icon={<DeleteOutlined />}
-              danger
-              className="p-0"
-            />
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
+  const filteredVariants = (product?.variants || []).filter(
+    (variant) =>
+      variant.title.en.toLowerCase().includes(searchText.toLowerCase()) ||
+      variant.title.ar.toLowerCase().includes(searchText.toLowerCase()) ||
+      variant.skuId.toLowerCase().includes(searchText.toLowerCase()) ||
+      variant.size.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  if (error?.response?.status === 404) {
+    return null; // Redirect handled in onError
+  }
 
   return (
     <div className="p-6">
@@ -214,7 +209,9 @@ const VariantPage = ({ productId, onNavigateBack }) => {
               onClick={onNavigateBack}
               className="p-0 mr-4"
             />
-            <h1 className="text-2xl font-medium text-gray-600">Variants</h1>
+            <h1 className="text-2xl font-medium text-gray-600">
+              Variants for {product?.name?.en || "Product"}
+            </h1>
           </div>
 
           <div className="flex items-center justify-between mb-4">
@@ -228,7 +225,7 @@ const VariantPage = ({ productId, onNavigateBack }) => {
                 >
                   <Option value={10}>10</Option>
                   <Option value={25}>25</Option>
-                  <Option value={50}>50</Option>
+                  <Option value={35}>35</Option>
                 </Select>
               </div>
 
@@ -254,9 +251,113 @@ const VariantPage = ({ productId, onNavigateBack }) => {
         </div>
 
         <Table
-          columns={columns}
+          columns={[
+            {
+              title: "#",
+              key: "checkbox",
+              width: 50,
+              render: () => <Checkbox />,
+            },
+            {
+              title: "S.No.",
+              key: "serialNumber",
+              width: 80,
+              render: (_, __, index) => index + 1,
+            },
+            {
+              title: "SKU ID",
+              dataIndex: "skuId",
+              key: "skuId",
+              width: 150,
+            },
+            {
+              title: "Title (EN)",
+              key: "title_en",
+              width: 200,
+              render: (_, record) => (
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(record.title.en),
+                  }}
+                />
+              ),
+              ellipsis: true,
+            },
+            {
+              title: "Title (AR)",
+              key: "title_ar",
+              width: 200,
+              render: (_, record) => (
+                <div
+                  dir="rtl"
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(record.title.ar),
+                  }}
+                />
+              ),
+              ellipsis: true,
+            },
+            {
+              title: "Size",
+              dataIndex: "size",
+              key: "size",
+              width: 150,
+            },
+            {
+              title: "Status",
+              key: "status",
+              width: 100,
+              render: (_, record) => (
+                <Switch
+                  checked={record.status}
+                  onChange={(checked) =>
+                    updateVariantMutation.mutate({
+                      variantId: record._id,
+                      data: { status: checked },
+                    })
+                  }
+                  className="bg-gray-300"
+                />
+              ),
+            },
+            {
+              title: "Actions",
+              key: "actions",
+              width: 150,
+              render: (_, record) => (
+                <Space>
+                  <Button
+                    type="link"
+                    icon={<EyeOutlined />}
+                    onClick={() => handleEdit(record)}
+                    className="p-0"
+                  />
+                  <Button
+                    type="link"
+                    icon={<EditOutlined />}
+                    onClick={() => handleEdit(record)}
+                    className="p-0"
+                  />
+                  <Popconfirm
+                    title="Are you sure you want to delete this variant?"
+                    onConfirm={() => handleDelete(record._id)}
+                    okText="Yes"
+                    cancelText="No"
+                  >
+                    <Button
+                      type="link"
+                      icon={<DeleteOutlined />}
+                      danger
+                      className="p-0"
+                    />
+                  </Popconfirm>
+                </Space>
+              ),
+            },
+          ]}
           dataSource={filteredVariants}
-          rowKey="id"
+          rowKey="_id"
+          loading={isLoading}
           pagination={{
             pageSize: pageSize,
             showSizeChanger: false,
