@@ -14,7 +14,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(cors({ origin: "http://localhost:5001", credentials: true }));
+app.use(
+  cors({
+    origin: ["https://esme-v2.onrender.com/", "http://localhost:5001"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
