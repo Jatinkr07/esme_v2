@@ -16,7 +16,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(
   cors({
-    origin: ["https://esme-v2.onrender.com/", "http://localhost:5001"],
+    origin: ["https://esme-v2.onrender.com", "http://localhost:5001"],
     credentials: true,
   })
 );
