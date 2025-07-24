@@ -27,7 +27,7 @@ import { useEffect } from "react";
 const TipTapComponent = ({ data, onChange, placeholder, height = 150 }) => {
   const editor = useEditor({
     extensions: [
-      StarterKit, // Includes Bold, Italic, List, Paragraph, etc.
+      StarterKit,
       Link.configure({
         openOnClick: false,
       }),
@@ -170,9 +170,10 @@ const TipTapComponent = ({ data, onChange, placeholder, height = 150 }) => {
         editor={editor}
         className="p-4 tiptap-editor"
         style={{
-          minHeight: `${height}px`,
-          maxHeight: `${height}px`,
-          overflowY: "auto",
+          // minHeight: `${height}px`,
+          // maxHeight: `${height}px`,
+          // overflowY: "auto",
+          height,
         }}
       />
     </div>

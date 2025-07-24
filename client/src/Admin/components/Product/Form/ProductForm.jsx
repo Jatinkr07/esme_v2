@@ -57,7 +57,7 @@ const ProductForm = ({ initialData, onSave, onCancel }) => {
         },
         productSummary: initialData.productSummary || { en: "", ar: "" },
       });
-      // Mark tabs as completed if data exists
+
       setCompletedTabs({
         1: !!(
           initialData.name?.en &&
@@ -80,7 +80,6 @@ const ProductForm = ({ initialData, onSave, onCancel }) => {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      // Explicitly validate editor fields
       const requiredEditorFields = [
         { field: "productSummary", tab: "1" },
         { field: "productBenefits", tab: "2" },
@@ -96,13 +95,13 @@ const ProductForm = ({ initialData, onSave, onCancel }) => {
           return;
         }
       }
-      // Validate ingredients
+
       if (!ingredients.some((ing) => ing.trim())) {
         message.error("Please add at least one ingredient");
         setActiveTab("1");
         return;
       }
-      // Check if all tabs are completed
+
       if (Object.values(completedTabs).some((completed) => !completed)) {
         message.error("Please fill in all required fields in all tabs");
         return;
@@ -124,7 +123,7 @@ const ProductForm = ({ initialData, onSave, onCancel }) => {
       ...prev,
       [field]: { ...prev[field], [lang]: data },
     }));
-    // Update tab completion
+
     setCompletedTabs((prev) => ({
       ...prev,
       [getTabKey(field)]: !!(
@@ -142,7 +141,7 @@ const ProductForm = ({ initialData, onSave, onCancel }) => {
         currentIngredient,
       ]);
       setCurrentIngredient("");
-      // Update tab 1 completion
+
       setCompletedTabs((prev) => ({
         ...prev,
         1: !!(
@@ -156,7 +155,6 @@ const ProductForm = ({ initialData, onSave, onCancel }) => {
 
   const removeIngredient = (index) => {
     setIngredients(ingredients.filter((_, i) => i !== index));
-    // Update tab 1 completion
     setCompletedTabs((prev) => ({
       ...prev,
       1: !!(
@@ -185,7 +183,6 @@ const ProductForm = ({ initialData, onSave, onCancel }) => {
 
   const handleTabChange = async (key) => {
     try {
-      // Validate current tab before switching
       if (activeTab === "1") {
         await form.validateFields(["name.en", "name.ar", "category"]);
         const hasIngredients = ingredients.some((ing) => ing.trim());

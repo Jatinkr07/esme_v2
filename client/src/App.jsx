@@ -4,6 +4,7 @@ import LayoutOutlet from "./layout/Outlet";
 import { lazy } from "react";
 import { AdminProvider } from "./Admin/context/AdminContext";
 import AdminLogin from "./Admin/components/Auth/Login";
+import ParticularProductPage from "./components/Shop/ParticularPage/ParticularProductPage";
 const Dashboard = lazy(() => import("./Admin/components/Dashboard/Dashboard"));
 const HomePage = lazy(() => import("./pages/home/HomePage"));
 const ShopPage = lazy(() => import("./pages/shop/ShopPage"));
@@ -20,6 +21,10 @@ function App() {
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+            <Route
+              path="/particular-product"
+              element={<ParticularProductPage />}
+            />
           </Route>
           <Route
             path="/admin/*"
